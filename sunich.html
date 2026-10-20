@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تطبيق مندوب مبيعات سن إيچ</title>
+    <style>
+        :root {
+            --primary: #d32f2f; /* لون مقارب لهوية سن إيچ */
+            --secondary: #ff9800;
+            --bg: #f4f7f6;
+            --text: #333;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 60px; }
+        header { background: var(--primary); color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { padding: 15px; }
+        .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        h2 { font-size: 16px; margin-bottom: 15px; color: var(--primary); border-bottom: 2px solid var(--bg); padding-bottom: 5px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        input, select, button { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: var(--primary); }
+        button { background: var(--secondary); color: white; border: none; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        button:active { background: #e68a00; }
+        
+        /* شريط التنقل السفلي */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); z-index: 100; }
+        .nav-item { text-align: center; font-size: 14px; color: #777; cursor: pointer; width: 33%; font-weight: bold; }
+        .nav-item.active { color: var(--primary); }
+        
+        /* إخفاء الصفحات */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* قائمة الطلبيات */
+        .order-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .order-item:last-child { border-bottom: none; }
+        .order-details { display: flex; justify-content: space-between; font-size: 14px; }
+        .price { color: var(--primary); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <header>طلبيات سن إيچ</header>
+
+    <!-- صفحة تسجيل طلبية جديدة -->
+    <div id="new-order-page" class="page active container">
+        <div class="card">
+            <h2>تسجيل طلبية جديدة</h2>
+            <label>اسم المحل (الزبون)</label>
+            <input type="text" id="shopName" placeholder="مثال: أسواق النور - حي الحسين">
+            
+            <label>المنتج</label>
+            <select id="productSelect">
+                <option value="عصير برتقال 1 لتر - كرتون">عصير برتقال 1 لتر - كرتون (12 عبوة)</option>
+                <option value="نكتار مانجو 1 لتر - كرتون">نكتار مانجو 1 لتر - كرتون (12 عبوة)</option>
+                <option value="زجاج مشمش 300 مل - كرتون">زجاج مشمش 300 مل - كرتون (24 قنينة)</option>
+                <option value="عصير تفاح 200 مل - كرتون">عصير تفاح 200 مل - كرتون (36 عبوة)</option>
+                <option value="سموذي فواكه حمراء">سموذي فواكه حمراء - كرتون</option>
+            </select>
+
+            <label>الكمية (بالكرتون)</label>
+            <input type="number" id="qty" placeholder="عدد الكراتين" min="1">
+
+            <label>السعر الإجمالي (دينار عراقي)</label>
+            <input type="number" id="totalPrice" placeholder="أدخل السعر الإجمالي">
+
+            <button onclick="saveOrder()">حفظ الطلبية</button>
+        </div>
+    </div>
+
+    <!-- صفحة سجل الطلبيات (الجرد) -->
+    <div id="history-page" class="page container">
+        <div class="card">
+            <h2>سجل الطلبيات اليومية</h2>
+            <div id="ordersList">
+                <!-- سيتم إدراج الطلبيات هنا برمجياً -->
+            </div>
+            <button style="background: #555; margin-top: 15px;" onclick="clearOrders()">مسح الجرد</button>
+        </div>
+    </div>
+
+    <!-- شريط التنقل السفلي -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchPage('new-order-page', this)">📝 طلب جديد</div>
+        <div class="nav-item" onclick="switchPage('history-page', this)">📊 الجرد</div>
+    </div>
+
+    <script>
+        // التبديل بين الصفحات
+        function switchPage(pageId, element) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            element.classList.add('active');
+            if(pageId === 'history-page') loadOrders();
+        }
+
+        // حفظ الطلبية في التخزين المحلي (أوفلاين)
+        function saveOrder() {
+            const shopName = document.getElementById('shopName').value;
+            const product = document.getElementById('productSelect').value;
+            const qty = document.getElementById('qty').value;
+            const totalPrice = document.getElementById('totalPrice').value;
+
+            if (!shopName || !qty || !totalPrice) {
+                alert('يرجى تعبئة جميع الحقول!');
+                return;
+            }
+
+            const order = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('ar-IQ'),
+                shop: shopName,
+                product: product,
+                qty: qty,
+                price: totalPrice
+            };
+
+            let orders = JSON.parse(localStorage.getItem('sunich_orders')) || [];
+            orders.push(order);
+            localStorage.setItem('sunich_orders', JSON.stringify(orders));
+
+            alert('تم حفظ الطلبية بنجاح!');
+            document.getElementById('shopName').value = '';
+            document.getElementById('qty').value = '';
+            document.getElementById('totalPrice').value = '';
+        }
+
+        // عرض الطلبيات المحفوظة
+        function loadOrders() {
+            const ordersList = document.getElementById('ordersList');
+            let orders = JSON.parse(localStorage.getItem('sunich_orders')) || [];
+            
+            if (orders.length === 0) {
+                ordersList.innerHTML = '<p style="text-align:center; color:#888;">لا توجد طلبيات مسجلة بعد.</p>';
+                return;
+            }
+
+            ordersList.innerHTML = orders.reverse().map(order => `
+                <div class="order-item">
+                    <div class="order-details">
+                        <strong>${order.shop}</strong>
+                        <span style="font-size:12px; color:#777;">${order.date}</span>
+                    </div>
+                    <div class="order-details" style="margin-top:5px;">
+                        <span>${order.qty} كرتون - ${order.product}</span>
+                        <span class="price">${Number(order.price).toLocaleString()} د.ع</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // مسح الجرد
+        function clearOrders() {
+            if(confirm('هل أنت متأكد من مسح جميع الطلبيات؟ تأكد من ترحيلها للشركة أولاً.')) {
+                localStorage.removeItem('sunich_orders');
+                loadOrders();
+            }
+        }
+    </script>
+</body>
+</html>
